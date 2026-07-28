@@ -1,7 +1,34 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
+
+export interface JapaneseChar {
+  k: string;
+  r: string;
+}
+
+export interface ColumnGroup {
+  id: string;
+  chars: (JapaneseChar | null)[];
+}
+
+export interface MistakeDetail {
+  r: string;
+  count: number;
+}
+
+export type MistakeStats = Record<string, MistakeDetail>;
+
+export interface HistorySession {
+  id: number;
+  date: string;
+  mode: string;
+  answered: number;
+  accuracy: number;
+  mistakes: MistakeStats;
+}
 
 // โครงสร้างข้อมูล Hiragana
-const hiraganaColumns = [
+const hiraganaColumns: ColumnGroup[] = [
   { id: 'a', chars: [{ k: 'あ', r: 'a' }, { k: 'い', r: 'i' }, { k: 'う', r: 'u' }, { k: 'え', r: 'e' }, { k: 'お', r: 'o' }] },
   { id: 'k', chars: [{ k: 'か', r: 'ka' }, { k: 'き', r: 'ki' }, { k: 'く', r: 'ku' }, { k: 'け', r: 'ke' }, { k: 'こ', r: 'ko' }] },
   { id: 's', chars: [{ k: 'さ', r: 'sa' }, { k: 'し', r: 'shi' }, { k: 'す', r: 'su' }, { k: 'せ', r: 'se' }, { k: 'そ', r: 'so' }] },
@@ -21,7 +48,7 @@ const hiraganaColumns = [
 ];
 
 // โครงสร้างข้อมูล Katakana
-const katakanaColumns = [
+const katakanaColumns: ColumnGroup[] = [
   { id: 'a', chars: [{ k: 'ア', r: 'a' }, { k: 'イ', r: 'i' }, { k: 'ウ', r: 'u' }, { k: 'エ', r: 'e' }, { k: 'オ', r: 'o' }] },
   { id: 'k', chars: [{ k: 'カ', r: 'ka' }, { k: 'キ', r: 'ki' }, { k: 'ク', r: 'ku' }, { k: 'ケ', r: 'ke' }, { k: 'コ', r: 'ko' }] },
   { id: 's', chars: [{ k: 'サ', r: 'sa' }, { k: 'シ', r: 'shi' }, { k: 'ス', r: 'su' }, { k: 'セ', r: 'se' }, { k: 'ソ', r: 'so' }] },
@@ -42,21 +69,21 @@ const katakanaColumns = [
 
 export default function App() {
   // สถานะเพื่อเก็บว่าตอนนี้อยู่แท็บไหน
-  const [activeTab, setActiveTab] = useState('hiragana');
+  const [activeTab, setActiveTab] = useState<'hiragana' | 'katakana' | 'progress'>('hiragana');
   
   // สถานะเก็บประวัติการเรียนรู้
-  const [history, setHistory] = useState(() => {
+  const [history, setHistory] = useState<HistorySession[]>(() => {
     const saved = localStorage.getItem('appProgressHistory');
     return saved ? JSON.parse(saved) : [];
   });
 
   // ดึงข้อมูลจาก localStorage ตอนเริ่มต้น (ถ้าไม่มีให้ใช้ค่าเริ่มต้น)
-  const [selectedGroupsHira, setSelectedGroupsHira] = useState(() => {
+  const [selectedGroupsHira, setSelectedGroupsHira] = useState<string[]>(() => {
     const saved = localStorage.getItem('hiraganaSelections');
     return saved ? JSON.parse(saved) : ['a', 'k', 's'];
   });
   
-  const [selectedGroupsKata, setSelectedGroupsKata] = useState(() => {
+  const [selectedGroupsKata, setSelectedGroupsKata] = useState<string[]>(() => {
     const saved = localStorage.getItem('katakanaSelections');
     return saved ? JSON.parse(saved) : ['a', 'k', 's'];
   });
@@ -73,16 +100,16 @@ export default function App() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
-  const [deck, setDeck] = useState([]);
+  const [deck, setDeck] = useState<JapaneseChar[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [inputVal, setInputVal] = useState('');
-  const [feedback, setFeedback] = useState(null);
+  const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   
   const [correctCount, setCorrectCount] = useState(0);
   const [incorrectCount, setIncorrectCount] = useState(0);
-  const [mistakeStats, setMistakeStats] = useState({});
+  const [mistakeStats, setMistakeStats] = useState<MistakeStats>({});
 
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isPlaying && !isFinished && inputRef.current) {
@@ -90,7 +117,7 @@ export default function App() {
     }
   }, [isPlaying, isFinished, currentIndex]);
 
-  const toggleGroup = (id) => {
+  const toggleGroup = (id: string) => {
     if (activeTab === 'hiragana') {
       setSelectedGroupsHira(prev => prev.includes(id) ? prev.filter(groupId => groupId !== id) : [...prev, id]);
     } else {
@@ -104,10 +131,10 @@ export default function App() {
     
     if (currentSelected.length === 0) return;
     
-    let newDeck = [];
+    let newDeck: JapaneseChar[] = [];
     currentColumns.forEach(col => {
       if (currentSelected.includes(col.id)) {
-        const validChars = col.chars.filter(char => char !== null);
+        const validChars = col.chars.filter((char): char is JapaneseChar => char !== null);
         newDeck = [...newDeck, ...validChars];
       }
     });
@@ -125,14 +152,15 @@ export default function App() {
     setIsPlaying(true);
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setInputVal(val);
 
     if (feedback !== null) return; 
 
     const currentCard = deck[currentIndex];
-    
+    if (!currentCard) return;
+
     if (val.trim().toLowerCase() === currentCard.r) {
       setFeedback('correct');
       setCorrectCount(prev => prev + 1);
@@ -150,11 +178,13 @@ export default function App() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!inputVal.trim() || feedback !== null) return;
 
     const currentCard = deck[currentIndex];
+    if (!currentCard) return;
+
     const isCorrect = inputVal.trim().toLowerCase() === currentCard.r;
 
     if (isCorrect) {
@@ -193,11 +223,15 @@ export default function App() {
     setIsFinished(false);
   };
 
+  const totalAttempts = correctCount + incorrectCount;
+  const accuracy = totalAttempts === 0 ? 0 : Math.round((correctCount / totalAttempts) * 100);
+  const answeredCount = totalAttempts;
+
   const handleEndSession = () => {
     setIsFinished(true);
     // บันทึกประวัติเมื่อเล่นไปอย่างน้อย 1 ข้อ
     if (totalAttempts > 0) {
-      const newSession = {
+      const newSession: HistorySession = {
         id: Date.now(),
         date: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }),
         mode: activeTab,
@@ -211,10 +245,6 @@ export default function App() {
     }
   };
 
-  const totalAttempts = correctCount + incorrectCount;
-  const accuracy = totalAttempts === 0 ? 0 : Math.round((correctCount / totalAttempts) * 100);
-  const answeredCount = totalAttempts;
-  
   const currentSelected = activeTab === 'hiragana' ? selectedGroupsHira : selectedGroupsKata;
   const currentColumns = activeTab === 'hiragana' ? hiraganaColumns : katakanaColumns;
 
@@ -275,7 +305,7 @@ export default function App() {
               {history.length > 0 && (
                 <button 
                   onClick={() => { setHistory([]); localStorage.removeItem('appProgressHistory'); }}
-                  className="text-xs text-red-400 hover:text-red-300 font-bold px-3 py-1 bg-red-500/10 rounded-lg transition-colors"
+                  className="text-xs text-red-400 hover:text-red-300 font-bold px-3 py-1 bg-red-500/10 rounded-lg transition-colors cursor-pointer"
                 >
                   Clear History
                 </button>
@@ -289,7 +319,7 @@ export default function App() {
             ) : (
               <div className="flex flex-col gap-4">
                 {history.map(session => {
-                  const sortedMistakes = Object.entries(session.mistakes).sort((a,b) => b[1].count - a[1].count);
+                  const sortedMistakes = Object.entries(session.mistakes || {}).sort((a, b) => b[1].count - a[1].count);
                   const topMistake = sortedMistakes.length > 0 ? sortedMistakes[0] : null;
                   
                   return (
@@ -298,6 +328,7 @@ export default function App() {
                         <div className="text-xs text-gray-400 mb-1">{session.date}</div>
                         <div className="font-bold text-lg text-white capitalize">{session.mode} Session</div>
                       </div>
+
                       <div className="flex gap-6 items-center w-full md:w-auto">
                         <div className="text-center">
                           <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Answered</div>
@@ -386,7 +417,7 @@ export default function App() {
           <button 
             onClick={startGame}
             disabled={currentSelected.length === 0}
-            className="w-full md:w-auto bg-[#65b214] hover:bg-[#72c617] disabled:bg-[#3b3f4d] disabled:text-gray-500 text-white font-bold py-4 md:py-3 px-8 rounded-full shadow-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full md:w-auto bg-[#65b214] hover:bg-[#72c617] disabled:bg-[#3b3f4d] disabled:text-gray-500 text-white font-bold py-4 md:py-3 px-8 rounded-full shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
           >
             Begin Test - {currentSelected.length} Groups
           </button>
@@ -406,7 +437,7 @@ export default function App() {
     const sortedMistakes = Object.entries(mistakeStats).sort((a, b) => b[1].count - a[1].count);
 
     return (
-      <div className="min-h-screen bg-[#1c1e26] text-white flex items-center justify-center p-4 font-sans py-12">
+      <div className="min-h-screen bg-[#1c1e26] text-white flex items-center justify-center p-4 font-sans py-12 select-none">
         <div className="bg-[#242731] p-6 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full text-center border border-[#323644] max-h-[90vh] flex flex-col">
           <h1 className="text-3xl font-bold mb-2">Session Complete!</h1>
           <p className="text-gray-400 mb-6 text-sm sm:text-base">Here are your results for this session.</p>
@@ -428,27 +459,27 @@ export default function App() {
                 <span className="bg-[#242731] px-2 py-1 rounded text-xs">{sortedMistakes.length} Chars</span>
              </h3>
              {sortedMistakes.length === 0 ? (
-               <div className="text-center text-[#65b214] py-8 font-medium bg-[#242731] rounded-lg border border-[#2d323e]">
-                  Perfect! You made no mistakes. 🎉
-               </div>
+                <div className="text-center text-[#65b214] py-8 font-medium bg-[#242731] rounded-lg border border-[#2d323e]">
+                   Perfect! You made no mistakes. 🎉
+                </div>
              ) : (
-               <div className="flex flex-col gap-3">
-                 {sortedMistakes.map(([char, data]) => (
-                   <div key={char} className="flex items-center justify-between bg-[#242731] p-3 rounded-lg border border-[#2d323e]">
-                     <div className="flex items-center gap-4">
-                       <span className="text-2xl font-bold text-red-400 w-8 text-center">{char}</span>
-                       <span className="text-sm font-medium text-gray-400 border-l border-[#3b3f4d] pl-4">{data.r}</span>
-                     </div>
-                     <div className="text-xs font-bold bg-red-500/10 text-red-400 px-3 py-1.5 rounded-full border border-red-500/20">
-                       Missed {data.count}
-                     </div>
-                   </div>
-                 ))}
-               </div>
+                <div className="flex flex-col gap-3">
+                  {sortedMistakes.map(([char, data]) => (
+                    <div key={char} className="flex items-center justify-between bg-[#242731] p-3 rounded-lg border border-[#2d323e]">
+                      <div className="flex items-center gap-4">
+                        <span className="text-2xl font-bold text-red-400 w-8 text-center">{char}</span>
+                        <span className="text-sm font-medium text-gray-400 border-l border-[#3b3f4d] pl-4">{data.r}</span>
+                      </div>
+                      <div className="text-xs font-bold bg-red-500/10 text-red-400 px-3 py-1.5 rounded-full border border-red-500/20">
+                        Missed {data.count}
+                      </div>
+                    </div>
+                  ))}
+                </div>
              )}
           </div>
 
-          <button onClick={resetGame} className="w-full shrink-0 bg-[#3b3f4d] hover:bg-[#494e5e] text-white font-bold py-4 rounded-xl transition-colors">
+          <button onClick={resetGame} className="w-full shrink-0 bg-[#3b3f4d] hover:bg-[#494e5e] text-white font-bold py-4 rounded-xl transition-colors cursor-pointer">
             Back to Selection
           </button>
         </div>
@@ -456,8 +487,10 @@ export default function App() {
     );
   }
 
+  const currentCard = deck[currentIndex];
+
   return (
-    <div className="min-h-screen bg-[#1c1e26] text-white flex flex-col items-center justify-center p-4 font-sans">
+    <div className="min-h-screen bg-[#1c1e26] text-white flex flex-col items-center justify-center p-4 font-sans select-none">
       
       {/* Stats Bar */}
       <div className="w-full max-w-md flex justify-between bg-[#242731] p-4 rounded-t-2xl border border-b-0 border-[#323644]">
@@ -480,7 +513,7 @@ export default function App() {
         <div className={`text-8xl sm:text-9xl font-medium mb-12 transition-colors duration-200 ${
           feedback === 'correct' ? 'text-[#65b214]' : feedback === 'incorrect' ? 'text-red-500' : 'text-white'
         }`}>
-          {deck[currentIndex].k}
+          {currentCard ? currentCard.k : ''}
         </div>
 
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
@@ -496,11 +529,11 @@ export default function App() {
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
-            spellCheck="false"
+            spellCheck={false}
           />
         </form>
         
-        <button onClick={handleEndSession} className="mt-8 text-[#6d7a93] hover:text-white text-sm uppercase tracking-wider font-bold transition-colors">
+        <button onClick={handleEndSession} className="mt-8 text-[#6d7a93] hover:text-white text-sm uppercase tracking-wider font-bold transition-colors cursor-pointer">
           End Session
         </button>
       </div>

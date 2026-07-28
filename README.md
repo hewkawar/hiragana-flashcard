@@ -1,77 +1,95 @@
-# React + TypeScript + Vite
+# Japanese Hiragana & Katakana Flashcards 🇯🇵
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive, modern web application designed for practicing Japanese Kana (**Hiragana** & **Katakana**) characters with real-time romaji feedback and progress history tracking.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ✨ Features
 
-## React Compiler
+- ⛩️ **Hiragana & Katakana Sets**: Full support for basic characters (Go-jūon) as well as Dakuten (濁点), Handakuten (半濁点), and special characters.
+- 🎛️ **Customizable Practice Columns**: Toggle specific character groups (`A`, `K`, `S`, `T`, `N`, `H`, `M`, `Y`, `R`, `W`, `N`, `G`, `Z`, `D`, `B`, `P`) to focus on your weak areas.
+- ⚡ **Real-time Romaji Validation**: Instant visual cues (green for correct, red for incorrect) as you type, allowing for rapid flashcard practice.
+- 📊 **Detailed Session Results**: Comprehensive end-of-session reports displaying your overall accuracy percentage, total answered cards, and a breakdown of frequently missed characters.
+- 📈 **Learning Progress Tracking**: Stores past practice history in `localStorage` so you can monitor your accuracy trends over time.
+- 🎨 **Responsive Dark Theme UI**: Built with a modern, eyes-friendly dark theme optimized for mobile and desktop screens.
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+---
 
-Note: This will impact Vite dev & build performances.
+## 🛠️ Tech Stack
 
-## Expanding the ESLint configuration
+- **Framework**: [React 19](https://react.dev/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🚀 Getting Started
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Prerequisites
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Ensure you have **Node.js** (v18 or higher) installed on your system.
 
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/hiragana-flashcard.git
+   cd hiragana-flashcard
+   ```
+
+2. Install project dependencies:
+   ```bash
+   npm install
+   ```
+
+---
+
+## 💻 Usage & Scripts
+
+- **Start Development Server**:
+  ```bash
+  npm run dev
+  ```
+  Open your browser and navigate to `http://localhost:5173`.
+
+- **Build for Production**:
+  ```bash
+  npm run build
+  ```
+  Compiles TypeScript types and builds static assets into the `dist/` folder.
+
+- **Preview Production Build**:
+  ```bash
+  npm run preview
+  ```
+
+- **Lint Code**:
+  ```bash
+  npm run lint
+  ```
+
+---
+
+## 📁 Project Structure
+
+```text
+hiragana-flashcard/
+├── public/              # Static public assets & favicons
+├── src/
+│   ├── App.tsx          # Core Flashcard Application & State Logic
+│   ├── main.tsx         # React DOM Root Entrypoint
+│   └── index.css        # Global CSS & Tailwind Directives
+├── eslint.config.js     # ESLint Linting Configuration
+├── index.html           # Main HTML Template
+├── package.json         # Project Dependencies & Scripts
+├── tsconfig.json        # TypeScript Base Configuration
+├── vite.config.ts       # Vite Configuration
+└── LICENSE              # MIT License
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 📄 License
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for full details.

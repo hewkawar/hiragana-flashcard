@@ -1,7 +1,8 @@
 {
   "name": "hiragana-flashcard",
-  "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Interactive Hiragana & Katakana flashcard learning application built with React, TypeScript, and Tailwind CSS.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
