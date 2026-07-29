@@ -393,7 +393,7 @@ export default function App() {
             
             {history.length === 0 ? (
               <div className="text-center bg-white dark:bg-[#1e2129] border border-slate-200 dark:border-[#2d323e] p-10 rounded-xl text-slate-500 dark:text-gray-500 shadow-sm">
-                ยังไม่มีประวัติการฝึกซ้อม ลองเริ่มต้นทำแบบทดสอบเพื่อบันทึกผลสิ!
+                No training history yet. Try taking a test to record your results!
               </div>
             ) : (
               <div className="flex flex-col gap-4">
