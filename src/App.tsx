@@ -27,6 +27,8 @@ export interface HistorySession {
   mistakes: MistakeStats;
 }
 
+export type ThemeMode = 'system' | 'light' | 'dark';
+
 // โครงสร้างข้อมูล Hiragana
 const hiraganaColumns: ColumnGroup[] = [
   { id: 'a', chars: [{ k: 'あ', r: 'a' }, { k: 'い', r: 'i' }, { k: 'う', r: 'u' }, { k: 'え', r: 'e' }, { k: 'お', r: 'o' }] },
@@ -67,7 +69,79 @@ const katakanaColumns: ColumnGroup[] = [
   { id: 'p', chars: [{ k: 'パ', r: 'pa' }, { k: 'ピ', r: 'pi' }, { k: 'プ', r: 'pu' }, { k: 'ペ', r: 'pe' }, { k: 'ポ', r: 'po' }] }
 ];
 
+function ThemeSwitcher({ theme, setTheme }: { theme: ThemeMode; setTheme: (t: ThemeMode) => void }) {
+  const handleToggle = () => {
+    if (theme === 'system') setTheme('light');
+    else if (theme === 'light') setTheme('dark');
+    else setTheme('system');
+  };
+
+  const info = theme === 'system' 
+    ? { title: 'Theme: System (Auto)', label: 'System' } 
+    : theme === 'light' 
+    ? { title: 'Theme: Light', label: 'Light' } 
+    : { title: 'Theme: Dark', label: 'Dark' };
+
+  return (
+    <button
+      onClick={handleToggle}
+      title={`${info.title} — Click to switch`}
+      aria-label={`${info.title} — Click to switch`}
+      className="h-10 px-3 rounded-lg bg-slate-200/80 dark:bg-[#1e2129] border border-slate-300/60 dark:border-[#2d323e] hover:bg-slate-300/80 dark:hover:bg-[#2a2e39] text-slate-700 dark:text-gray-300 transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 select-none"
+    >
+      {theme === 'system' && (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      )}
+      {theme === 'light' && (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      )}
+      {theme === 'dark' && (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 export default function App() {
+  // Theme state with system / light / dark support
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    const saved = localStorage.getItem('appTheme') as ThemeMode;
+    return saved && ['system', 'light', 'dark'].includes(saved) ? saved : 'system';
+  });
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const applyTheme = () => {
+      const isDark = theme === 'dark' || (theme === 'system' && mediaQuery.matches);
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.style.colorScheme = 'light';
+      }
+    };
+
+    applyTheme();
+    localStorage.setItem('appTheme', theme);
+
+    const handleSystemChange = () => {
+      if (theme === 'system') {
+        applyTheme();
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleSystemChange);
+    return () => mediaQuery.removeEventListener('change', handleSystemChange);
+  }, [theme]);
+
   // สถานะเพื่อเก็บว่าตอนนี้อยู่แท็บไหน
   const [activeTab, setActiveTab] = useState<'hiragana' | 'katakana' | 'progress'>('hiragana');
   
@@ -250,50 +324,55 @@ export default function App() {
 
   if (!isPlaying) {
     return (
-      <div className="min-h-screen bg-[#1c1e26] text-white p-6 font-sans select-none overflow-x-hidden flex flex-col">
+      <div className="min-h-screen bg-slate-100 dark:bg-[#1c1e26] text-slate-800 dark:text-white p-6 font-sans select-none overflow-x-hidden flex flex-col transition-colors duration-200">
         
-        {/* Header and Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-4 border-b border-[#2d323e] gap-4">
+        {/* Header and Controls */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-4 border-b border-slate-200 dark:border-[#2d323e] gap-4">
           <div className="flex items-center gap-4">
-             <div className="bg-white text-black font-bold px-2 py-1 rounded flex gap-1 items-center">
+             <div className="bg-slate-900 text-white dark:bg-white dark:text-black font-bold px-2 py-1 rounded flex gap-1 items-center">
                 <span>A</span>
                 {/* เปลี่ยนไอคอนหน้า A ตามแท็บที่เลือก */}
-                <span className="bg-black text-white px-1 text-sm rounded">
+                <span className="bg-white text-slate-900 dark:bg-black dark:text-white px-1 text-sm rounded">
                   {activeTab === 'hiragana' ? 'あ' : 'ア'}
                 </span>
              </div>
              <div>
-                <h1 className="text-sm font-bold leading-tight">JLPT</h1>
-                <h2 className="text-xs text-gray-400">Flashcards</h2>
+                <h1 className="text-sm font-bold leading-tight text-slate-900 dark:text-white">JLPT</h1>
+                <h2 className="text-xs text-slate-500 dark:text-gray-400">Flashcards</h2>
              </div>
           </div>
           
-          {/* Tab Selection */}
-          <div className="flex bg-[#1e2129] p-1 rounded-lg border border-[#2d323e] self-start sm:self-auto">
-            <button 
-              onClick={() => setActiveTab('hiragana')}
-              className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${
-                activeTab === 'hiragana' ? 'bg-[#3b3f4d] text-white shadow-sm' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Hiragana
-            </button>
-            <button 
-              onClick={() => setActiveTab('katakana')}
-              className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${
-                activeTab === 'katakana' ? 'bg-[#3b3f4d] text-white shadow-sm' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Katakana
-            </button>
-            <button 
-              onClick={() => setActiveTab('progress')}
-              className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${
-                activeTab === 'progress' ? 'bg-[#3b3f4d] text-white shadow-sm' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Progress
-            </button>
+          <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+            {/* Tab Selection */}
+            <div className="flex bg-slate-200/80 dark:bg-[#1e2129] p-1 rounded-lg border border-slate-300/60 dark:border-[#2d323e]">
+              <button 
+                onClick={() => setActiveTab('hiragana')}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors cursor-pointer ${
+                  activeTab === 'hiragana' ? 'bg-white text-slate-900 shadow-sm dark:bg-[#3b3f4d] dark:text-white' : 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Hiragana
+              </button>
+              <button 
+                onClick={() => setActiveTab('katakana')}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors cursor-pointer ${
+                  activeTab === 'katakana' ? 'bg-white text-slate-900 shadow-sm dark:bg-[#3b3f4d] dark:text-white' : 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Katakana
+              </button>
+              <button 
+                onClick={() => setActiveTab('progress')}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors cursor-pointer ${
+                  activeTab === 'progress' ? 'bg-white text-slate-900 shadow-sm dark:bg-[#3b3f4d] dark:text-white' : 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Progress
+              </button>
+            </div>
+
+            {/* Theme Selector */}
+            <ThemeSwitcher theme={theme} setTheme={setTheme} />
           </div>
         </div>
 
@@ -301,11 +380,11 @@ export default function App() {
         {activeTab === 'progress' ? (
           <div className="w-full max-w-7xl mx-auto overflow-y-auto pb-24 flex-grow custom-scrollbar px-2">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-white">Learning Progress</h2>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Learning Progress</h2>
               {history.length > 0 && (
                 <button 
                   onClick={() => { setHistory([]); localStorage.removeItem('appProgressHistory'); }}
-                  className="text-xs text-red-400 hover:text-red-300 font-bold px-3 py-1 bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                  className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-bold px-3 py-1 bg-red-500/10 rounded-lg transition-colors cursor-pointer"
                 >
                   Clear History
                 </button>
@@ -313,7 +392,7 @@ export default function App() {
             </div>
             
             {history.length === 0 ? (
-              <div className="text-center bg-[#1e2129] border border-[#2d323e] p-10 rounded-xl text-gray-500">
+              <div className="text-center bg-white dark:bg-[#1e2129] border border-slate-200 dark:border-[#2d323e] p-10 rounded-xl text-slate-500 dark:text-gray-500 shadow-sm">
                 ยังไม่มีประวัติการฝึกซ้อม ลองเริ่มต้นทำแบบทดสอบเพื่อบันทึกผลสิ!
               </div>
             ) : (
@@ -323,29 +402,29 @@ export default function App() {
                   const topMistake = sortedMistakes.length > 0 ? sortedMistakes[0] : null;
                   
                   return (
-                    <div key={session.id} className="bg-[#242731] border border-[#323644] p-5 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div key={session.id} className="bg-white dark:bg-[#242731] border border-slate-200 dark:border-[#323644] p-5 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
                       <div>
-                        <div className="text-xs text-gray-400 mb-1">{session.date}</div>
-                        <div className="font-bold text-lg text-white capitalize">{session.mode} Session</div>
+                        <div className="text-xs text-slate-400 dark:text-gray-400 mb-1">{session.date}</div>
+                        <div className="font-bold text-lg text-slate-900 dark:text-white capitalize">{session.mode} Session</div>
                       </div>
 
                       <div className="flex gap-6 items-center w-full md:w-auto">
                         <div className="text-center">
-                          <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Answered</div>
-                          <div className="font-bold text-white">{session.answered}</div>
+                          <div className="text-[10px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest">Answered</div>
+                          <div className="font-bold text-slate-900 dark:text-white">{session.answered}</div>
                         </div>
-                        <div className="text-center border-l border-[#323644] pl-6">
-                          <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Accuracy</div>
-                          <div className={`font-bold ${session.accuracy >= 80 ? 'text-[#65b214]' : session.accuracy >= 50 ? 'text-yellow-500' : 'text-red-400'}`}>
+                        <div className="text-center border-l border-slate-200 dark:border-[#323644] pl-6">
+                          <div className="text-[10px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest">Accuracy</div>
+                          <div className={`font-bold ${session.accuracy >= 80 ? 'text-[#65b214]' : session.accuracy >= 50 ? 'text-amber-500 dark:text-yellow-500' : 'text-red-500 dark:text-red-400'}`}>
                             {session.accuracy}%
                           </div>
                         </div>
                         <div className="flex-1 md:flex-none text-right md:text-left md:ml-4">
                           {topMistake ? (
-                            <div className="inline-block bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg text-xs">
-                              <span className="text-gray-400 mr-2">Top Mistake:</span>
-                              <span className="text-red-400 font-bold text-sm">{topMistake[0]}</span>
-                              <span className="text-red-400/70 ml-1">({topMistake[1].count}x)</span>
+                            <div className="inline-block bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 px-3 py-1.5 rounded-lg text-xs">
+                              <span className="text-slate-500 dark:text-gray-400 mr-2">Top Mistake:</span>
+                              <span className="text-red-600 dark:text-red-400 font-bold text-sm">{topMistake[0]}</span>
+                              <span className="text-red-500/70 dark:text-red-400/70 ml-1">({topMistake[1].count}x)</span>
                             </div>
                           ) : (
                             <div className="inline-block bg-[#65b214]/10 border border-[#65b214]/20 px-3 py-1.5 rounded-lg text-xs text-[#65b214] font-bold">
@@ -373,7 +452,7 @@ export default function App() {
                   <div 
                     onClick={() => toggleGroup(col.id)}
                     className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer mb-6 transition-colors duration-300 ${
-                      isSelected ? 'bg-[#5c9f13]' : 'bg-[#3b3f4d]'
+                      isSelected ? 'bg-[#5c9f13]' : 'bg-slate-300 dark:bg-[#3b3f4d]'
                     }`}
                   >
                     <div 
@@ -388,17 +467,17 @@ export default function App() {
                     {col.chars.map((char, index) => (
                       <div 
                         key={index} 
-                        className={`flex flex-col items-center justify-center h-14 border-b border-[#2a2e39] last:border-0 ${
+                        className={`flex flex-col items-center justify-center h-14 border-b border-slate-200 dark:border-[#2a2e39] last:border-0 ${
                           isSelected && char ? 'opacity-100' : 'opacity-40'
                         } transition-opacity duration-300`}
                       >
                         {char ? (
                           <>
-                            <span className="text-2xl font-medium mb-1">{char.k}</span>
-                            <span className="text-[10px] text-[#6d7a93] uppercase font-bold tracking-wider">{char.r}</span>
+                            <span className="text-2xl font-medium mb-1 text-slate-800 dark:text-white">{char.k}</span>
+                            <span className="text-[10px] text-slate-500 dark:text-[#6d7a93] uppercase font-bold tracking-wider">{char.r}</span>
                           </>
                         ) : (
-                          <span className="text-[#3b3f4d] text-lg font-bold">-</span>
+                          <span className="text-slate-300 dark:text-[#3b3f4d] text-lg font-bold">-</span>
                         )}
                       </div>
                     ))}
@@ -417,18 +496,12 @@ export default function App() {
           <button 
             onClick={startGame}
             disabled={currentSelected.length === 0}
-            className="w-full md:w-auto bg-[#65b214] hover:bg-[#72c617] disabled:bg-[#3b3f4d] disabled:text-gray-500 text-white font-bold py-4 md:py-3 px-8 rounded-full shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full md:w-auto bg-[#65b214] hover:bg-[#72c617] disabled:bg-slate-300 dark:disabled:bg-[#3b3f4d] disabled:text-slate-400 dark:disabled:text-gray-500 text-white font-bold py-4 md:py-3 px-8 rounded-full shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
           >
             Begin Test - {currentSelected.length} Groups
           </button>
         </div>
         )}
-
-        <style dangerouslySetInnerHTML={{__html: `
-          .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 6px; }
-          .custom-scrollbar::-webkit-scrollbar-track { background: #1c1e26; border-radius: 4px; }
-          .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b3f4d; border-radius: 4px; }
-        `}} />
       </div>
     );
   }
@@ -437,40 +510,44 @@ export default function App() {
     const sortedMistakes = Object.entries(mistakeStats).sort((a, b) => b[1].count - a[1].count);
 
     return (
-      <div className="min-h-screen bg-[#1c1e26] text-white flex items-center justify-center p-4 font-sans py-12 select-none">
-        <div className="bg-[#242731] p-6 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full text-center border border-[#323644] max-h-[90vh] flex flex-col">
-          <h1 className="text-3xl font-bold mb-2">Session Complete!</h1>
-          <p className="text-gray-400 mb-6 text-sm sm:text-base">Here are your results for this session.</p>
+      <div className="min-h-screen bg-slate-100 dark:bg-[#1c1e26] text-slate-800 dark:text-white flex items-center justify-center p-4 font-sans py-12 select-none relative transition-colors duration-200">
+        <div className="absolute top-4 right-4 z-10">
+          <ThemeSwitcher theme={theme} setTheme={setTheme} />
+        </div>
+
+        <div className="bg-white dark:bg-[#242731] p-6 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full text-center border border-slate-200 dark:border-[#323644] max-h-[90vh] flex flex-col">
+          <h1 className="text-3xl font-bold mb-2 text-slate-900 dark:text-white">Session Complete!</h1>
+          <p className="text-slate-500 dark:text-gray-400 mb-6 text-sm sm:text-base">Here are your results for this session.</p>
           
           <div className="grid grid-cols-2 gap-4 mb-6 shrink-0">
-            <div className="bg-[#1e2129] p-4 rounded-xl border border-[#2d323e]">
+            <div className="bg-slate-50 dark:bg-[#1e2129] p-4 rounded-xl border border-slate-200 dark:border-[#2d323e]">
               <p className="text-[#65b214] text-xs font-bold uppercase tracking-wider mb-1">Accuracy</p>
-              <p className="text-2xl sm:text-3xl font-bold text-white">{accuracy}%</p>
+              <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{accuracy}%</p>
             </div>
-            <div className="bg-[#1e2129] p-4 rounded-xl border border-[#2d323e]">
-              <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Answered</p>
-              <p className="text-2xl sm:text-3xl font-bold text-white">{answeredCount}</p>
+            <div className="bg-slate-50 dark:bg-[#1e2129] p-4 rounded-xl border border-slate-200 dark:border-[#2d323e]">
+              <p className="text-slate-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Answered</p>
+              <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{answeredCount}</p>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar mb-6 bg-[#1e2129] rounded-xl border border-[#2d323e] p-4 text-left">
-             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex justify-between items-center">
+          <div className="flex-1 overflow-y-auto custom-scrollbar mb-6 bg-slate-50 dark:bg-[#1e2129] rounded-xl border border-slate-200 dark:border-[#2d323e] p-4 text-left">
+             <h3 className="text-sm font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-4 flex justify-between items-center">
                 Frequently Missed
-                <span className="bg-[#242731] px-2 py-1 rounded text-xs">{sortedMistakes.length} Chars</span>
+                <span className="bg-white dark:bg-[#242731] border border-slate-200 dark:border-[#323644] text-slate-700 dark:text-gray-300 px-2 py-1 rounded text-xs">{sortedMistakes.length} Chars</span>
              </h3>
              {sortedMistakes.length === 0 ? (
-                <div className="text-center text-[#65b214] py-8 font-medium bg-[#242731] rounded-lg border border-[#2d323e]">
+                <div className="text-center text-[#65b214] py-8 font-medium bg-white dark:bg-[#242731] rounded-lg border border-slate-200 dark:border-[#2d323e]">
                    Perfect! You made no mistakes. 🎉
                 </div>
              ) : (
                 <div className="flex flex-col gap-3">
                   {sortedMistakes.map(([char, data]) => (
-                    <div key={char} className="flex items-center justify-between bg-[#242731] p-3 rounded-lg border border-[#2d323e]">
+                    <div key={char} className="flex items-center justify-between bg-white dark:bg-[#242731] p-3 rounded-lg border border-slate-200 dark:border-[#2d323e]">
                       <div className="flex items-center gap-4">
-                        <span className="text-2xl font-bold text-red-400 w-8 text-center">{char}</span>
-                        <span className="text-sm font-medium text-gray-400 border-l border-[#3b3f4d] pl-4">{data.r}</span>
+                        <span className="text-2xl font-bold text-red-500 dark:text-red-400 w-8 text-center">{char}</span>
+                        <span className="text-sm font-medium text-slate-500 dark:text-gray-400 border-l border-slate-200 dark:border-[#3b3f4d] pl-4">{data.r}</span>
                       </div>
-                      <div className="text-xs font-bold bg-red-500/10 text-red-400 px-3 py-1.5 rounded-full border border-red-500/20">
+                      <div className="text-xs font-bold bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 px-3 py-1.5 rounded-full border border-red-200 dark:border-red-500/20">
                         Missed {data.count}
                       </div>
                     </div>
@@ -479,7 +556,7 @@ export default function App() {
              )}
           </div>
 
-          <button onClick={resetGame} className="w-full shrink-0 bg-[#3b3f4d] hover:bg-[#494e5e] text-white font-bold py-4 rounded-xl transition-colors cursor-pointer">
+          <button onClick={resetGame} className="w-full shrink-0 bg-slate-800 hover:bg-slate-900 text-white dark:bg-[#3b3f4d] dark:hover:bg-[#494e5e] font-bold py-4 rounded-xl transition-colors cursor-pointer">
             Back to Selection
           </button>
         </div>
@@ -490,28 +567,32 @@ export default function App() {
   const currentCard = deck[currentIndex];
 
   return (
-    <div className="min-h-screen bg-[#1c1e26] text-white flex flex-col items-center justify-center p-4 font-sans select-none">
+    <div className="min-h-screen bg-slate-100 dark:bg-[#1c1e26] text-slate-800 dark:text-white flex flex-col items-center justify-center p-4 font-sans select-none relative transition-colors duration-200">
       
+      <div className="absolute top-4 right-4 z-10">
+        <ThemeSwitcher theme={theme} setTheme={setTheme} />
+      </div>
+
       {/* Stats Bar */}
-      <div className="w-full max-w-md flex justify-between bg-[#242731] p-4 rounded-t-2xl border border-b-0 border-[#323644]">
+      <div className="w-full max-w-md flex justify-between bg-white dark:bg-[#242731] p-4 rounded-t-2xl border border-b-0 border-slate-200 dark:border-[#323644] shadow-sm">
         <div className="text-center w-1/3">
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Answered</p>
-          <p className="font-bold text-lg">{answeredCount}</p>
+          <p className="text-[10px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest">Answered</p>
+          <p className="font-bold text-lg text-slate-900 dark:text-white">{answeredCount}</p>
         </div>
-        <div className="text-center w-1/3 border-x border-[#323644]">
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Incorrect</p>
-          <p className="font-bold text-red-400">{incorrectCount}</p>
+        <div className="text-center w-1/3 border-x border-slate-200 dark:border-[#323644]">
+          <p className="text-[10px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest">Incorrect</p>
+          <p className="font-bold text-red-500 dark:text-red-400">{incorrectCount}</p>
         </div>
         <div className="text-center w-1/3">
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Accuracy</p>
+          <p className="text-[10px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest">Accuracy</p>
           <p className="font-bold text-[#65b214]">{accuracy}%</p>
         </div>
       </div>
 
       {/* Flashcard Area */}
-      <div className="bg-[#242731] w-full max-w-md px-4 sm:px-8 py-10 sm:py-12 rounded-b-2xl border border-t-0 border-[#323644] flex flex-col items-center shadow-2xl">
+      <div className="bg-white dark:bg-[#242731] w-full max-w-md px-4 sm:px-8 py-10 sm:py-12 rounded-b-2xl border border-t-0 border-slate-200 dark:border-[#323644] flex flex-col items-center shadow-2xl">
         <div className={`text-8xl sm:text-9xl font-medium mb-12 transition-colors duration-200 ${
-          feedback === 'correct' ? 'text-[#65b214]' : feedback === 'incorrect' ? 'text-red-500' : 'text-white'
+          feedback === 'correct' ? 'text-[#65b214]' : feedback === 'incorrect' ? 'text-red-500' : 'text-slate-900 dark:text-white'
         }`}>
           {currentCard ? currentCard.k : ''}
         </div>
@@ -523,8 +604,8 @@ export default function App() {
             value={inputVal}
             onChange={handleInputChange}
             placeholder="Type romaji..."
-            className={`w-full bg-[#1e2129] border-2 rounded-xl px-4 py-4 text-xl text-center text-white focus:outline-none transition-colors ${
-               feedback === 'incorrect' ? 'border-red-500' : 'border-[#323644] focus:border-[#4a5063]'
+            className={`w-full bg-slate-50 dark:bg-[#1e2129] border-2 rounded-xl px-4 py-4 text-xl text-center text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none transition-colors ${
+               feedback === 'incorrect' ? 'border-red-500' : 'border-slate-200 dark:border-[#323644] focus:border-slate-400 dark:focus:border-[#4a5063]'
             }`}
             autoComplete="off"
             autoCorrect="off"
@@ -533,7 +614,7 @@ export default function App() {
           />
         </form>
         
-        <button onClick={handleEndSession} className="mt-8 text-[#6d7a93] hover:text-white text-sm uppercase tracking-wider font-bold transition-colors cursor-pointer">
+        <button onClick={handleEndSession} className="mt-8 text-slate-500 dark:text-[#6d7a93] hover:text-slate-900 dark:hover:text-white text-sm uppercase tracking-wider font-bold transition-colors cursor-pointer">
           End Session
         </button>
       </div>
