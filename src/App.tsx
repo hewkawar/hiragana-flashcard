@@ -378,7 +378,7 @@ export default function App() {
 
         {/* Character Grid Selection or Progress View */}
         {activeTab === 'progress' ? (
-          <div className="w-full max-w-7xl mx-auto overflow-y-auto pb-24 flex-grow custom-scrollbar px-2">
+          <div className="w-full max-w-7xl mx-auto overflow-y-auto pb-24 grow custom-scrollbar px-2">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">Learning Progress</h2>
               {history.length > 0 && (
@@ -440,7 +440,7 @@ export default function App() {
             )}
           </div>
         ) : (
-        <div className="w-full max-w-7xl mx-auto overflow-x-auto pb-24 flex-grow custom-scrollbar">
+        <div className="w-full max-w-7xl mx-auto overflow-x-auto pb-24 grow custom-scrollbar">
           <div className="flex justify-between min-w-max gap-4 px-2">
             {currentColumns.map((col) => {
               const isSelected = currentSelected.includes(col.id);
